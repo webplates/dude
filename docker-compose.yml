@@ -1,0 +1,83 @@
+version: "2.1"
+
+services:
+    errbit:
+        build:
+            context: images/errbit/
+            args:
+                ERRBIT_ADMIN_USERNAME: admin
+                ERRBIT_ADMIN_PASS: 123456
+        restart: always
+        networks:
+            - public
+            - internal
+        ports:
+            - 8881:8080
+        links:
+            - mongodb
+        environment:
+            ERRBIT_USER_HAS_USERNAME: "true"
+            PORT: 8080
+            RACK_ENV: production
+            MONGO_URL: mongodb://mongodb:27017/errbit
+
+    mongodb:
+        image: mongo:3.2
+        restart: always
+        networks:
+            - internal
+        ports:
+            - 27017:27017
+        volumes:
+            - ./var/mongo:/data/db
+
+    mailhog:
+        image: mailhog/mailhog
+        restart: always
+        networks:
+            - public
+        ports:
+            - 1025:1025
+            - 8825:8025
+        volumes:
+            - ./var/mailhog:/var/mailhog
+        environment:
+            MH_STORAGE: maildir
+            MH_MAILDIR_PATH: /var/mailhog
+
+    elasticsearch:
+        image: elasticsearch
+        restart: always
+        networks:
+            - public
+            - internal
+        volumes:
+            - ./var/elasticsearch/data:/usr/share/elasticsearch/data
+
+    kibana:
+        image: kibana
+        restart: always
+        networks:
+            - public
+            - internal
+        ports:
+            - 5601:5601
+        links:
+            - elasticsearch
+
+    mysql:
+        image: mysql:5.7
+        restart: always
+        networks:
+            - public
+            - internal
+        ports:
+            - 3306:3306
+        volumes:
+            - ./var/mysql:/var/lib/mysql
+        environment:
+            MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+
+networks:
+    public:
+    internal:
