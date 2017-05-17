@@ -1,6 +1,6 @@
-# EDDE
+# DUDE
 
-**Effective Docker Development Environment**
+**Docker Unified Development Environment**
 
 
 ## License
