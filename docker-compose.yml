@@ -1,13 +1,56 @@
-version: "2.1"
+version: "2.2"
+
+networks:
+    # Network for publicly available services
+    public:
+
+    # Network for internal dependencies
+    internal:
 
 services:
+    mysql:
+        image: mysql:5.7
+        container_name: dude_mysql
+        restart: ${RESTART}
+        networks:
+            - public
+        ports:
+            - 3306:3306
+        volumes:
+            - ${BASE_DIR}/mysql:/var/lib/mysql
+        environment:
+            MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
+
+    elasticsearch:
+        image: elasticsearch
+        container_name: dude_elasticsearch
+        restart: ${RESTART}
+        networks:
+            - public
+            - internal
+        volumes:
+            - ${BASE_DIR}/elasticsearch/data:/usr/share/elasticsearch/data
+
+    kibana:
+        image: kibana
+        container_name: dude_kibana
+        restart: ${RESTART}
+        networks:
+            - public
+            - internal
+        ports:
+            - 5601:5601
+        links:
+            - elasticsearch
+
     errbit:
         build:
             context: images/errbit/
             args:
                 ERRBIT_ADMIN_USERNAME: admin
                 ERRBIT_ADMIN_PASS: 123456
-        restart: always
+        container_name: dude_errbit
+        restart: ${RESTART}
         networks:
             - public
             - internal
@@ -23,61 +66,27 @@ services:
 
     mongodb:
         image: mongo:3.2
-        restart: always
+        container_name: dude_mongodb
+        restart: ${RESTART}
         networks:
+            - public
             - internal
         ports:
             - 27017:27017
         volumes:
-            - ./var/mongo:/data/db
+            - ${BASE_DIR}/mongodb:/data/db
 
     mailhog:
         image: mailhog/mailhog
-        restart: always
+        container_name: dude_mailhog
+        restart: ${RESTART}
         networks:
             - public
         ports:
             - 1025:1025
             - 8825:8025
         volumes:
-            - ./var/mailhog:/var/mailhog
+            - ${BASE_DIR}/mailhog:/var/mailhog
         environment:
             MH_STORAGE: maildir
             MH_MAILDIR_PATH: /var/mailhog
-
-    elasticsearch:
-        image: elasticsearch
-        restart: always
-        networks:
-            - public
-            - internal
-        volumes:
-            - ./var/elasticsearch/data:/usr/share/elasticsearch/data
-
-    kibana:
-        image: kibana
-        restart: always
-        networks:
-            - public
-            - internal
-        ports:
-            - 5601:5601
-        links:
-            - elasticsearch
-
-    mysql:
-        image: mysql:5.7
-        restart: always
-        networks:
-            - public
-            - internal
-        ports:
-            - 3306:3306
-        volumes:
-            - ./var/mysql:/var/lib/mysql
-        environment:
-            MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
-
-networks:
-    public:
-    internal:
